@@ -1,0 +1,21 @@
+[project]
+name = "asynchronous"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "suhaibshaikh03", email = "suhaibshaikh2003@gmail.com" }
+]
+requires-python = ">=3.13"
+dependencies = [
+    "chainlit>=2.4.1",
+    "openai-agents>=0.0.4",
+    "python-dotenv>=1.0.1",
+]
+
+[project.scripts]
+asynchronous = "asynchronous:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
