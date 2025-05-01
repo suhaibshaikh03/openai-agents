@@ -1,4 +1,4 @@
-#uv run src/hanoff.main.pys
+#uv run src/hanoff.main.py
 from dotenv import load_dotenv, find_dotenv
 import os
 from agents.run import RunConfig
