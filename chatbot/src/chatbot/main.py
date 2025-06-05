@@ -1,3 +1,4 @@
+# uv run chainlit run main.py -w
 import os
 from dotenv import load_dotenv
 from typing import cast
