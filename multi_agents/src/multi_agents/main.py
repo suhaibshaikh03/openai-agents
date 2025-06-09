@@ -60,11 +60,11 @@ AgenticAI_Agent = Agent(
     handoff_description="specialized in handling all queries regaring Agentic AI and it's development",
     tools=[
         Cloud_Agent.as_tool(
-            tool_name="Cloud Agent",
+            tool_name="Cloud_Agent",
             tool_description="A tool for retrieving cloud-based information in the field of Agentic AI",
         ),
         OpenAI_agents_sdk_agent.as_tool(
-            tool_name="OpenAI agents sdk Agent",
+            tool_name="OpenAI_agents_sdk_Agent",
             tool_description="A tool for retrieving information OpenAI agent sdk agentic framework in the field of Agentic AI"
         )
     ]
