@@ -11,14 +11,24 @@ from pydantic import BaseModel, Field
 from datetime import datetime, UTC
 from fastapi.responses import StreamingResponse
 from openai.types.responses import ResponseTextDeltaEvent
-
+from agents import (
+    GuardrailFunctionOutput,
+    InputGuardrailTripwireTriggered,
+    OutputGuardrailTripwireTriggered,
+    RunContextWrapper,
+    TResponseInputItem,
+    input_guardrail,
+    output_guardrail,
+)
 
 load_dotenv(find_dotenv())
 BASE_URL = "https://generativelanguage.googleapis.com/v1beta/openai/"
 MODEL = "gemini-1.5-flash"
 set_tracing_disabled(disabled=True)
 
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+# GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+GEMINI_API_KEY = "AIzaSyAz8O5klugfUrXBjaD45xytXHUZVRNkY6Y"
+
 
 
 client = AsyncOpenAI(
@@ -48,7 +58,29 @@ class Response(BaseModel):
     reply: str
     metadata: Metadata
 
+class Input(BaseModel):
+    is_relevant_input: bool
+    reasoning: str
 
+guardrail_agent = Agent(
+    name="Guardrail check",
+    instructions="Check if the user is asking a question related to app development,mobile development, or Agentic AI, cloud or OpenAI agents sdk\
+        Mark all other inputs as irrelevant",
+    model=OpenAIChatCompletionsModel(model=MODEL, openai_client=client),
+    output_type=Input,
+
+)
+
+@input_guardrail
+async def guard(
+    ctx: RunContextWrapper[None], agent: Agent, input: str | list[TResponseInputItem]
+) -> GuardrailFunctionOutput:
+    result = await Runner.run(guardrail_agent, input, context=ctx.context)
+    print(result.final_output)
+    return GuardrailFunctionOutput(
+        output_info=result.final_output,
+        tripwire_triggered=result.final_output.is_relevant_input is False,
+    )
 Cloud_Agent = Agent(
     name="Cloud Computing Agent",
     instructions="Specialized Agent to answer queries regarding Cloud computing in the contect of Agentic AI",
@@ -115,6 +147,7 @@ Panacloud_agent = Agent(
                   For all other queries, provide clear, concise, and educational responses with a teaching tone.",
       handoffs=[WebDev_agent, AgenticAI_Agent, MobileDev_agent],
       model=OpenAIChatCompletionsModel(model=MODEL, openai_client=client),
+      input_guardrails=[guard]
     #   model=LitellmModel(model="gemini/gemini-2.0-flash",api_key=GEMINI_API_KEY)
   )
 
@@ -125,10 +158,14 @@ async def chat(message: Message):
             status_code=400, detail="Message text cannot be empty")
 
     # Use the OpenAI Agents SDK to process the message
-    result = await Runner.run(starting_agent=Panacloud_agent, input=message.text)
-    reply_text = result.final_output  # Get the agent's response
-    print(result.last_agent.name)
+    try:
+        result = await Runner.run(starting_agent=Panacloud_agent, input=message.text)
+        reply_text = result.final_output  # Get the agent's response
+        print(result.last_agent.name)
 
+    except InputGuardrailTripwireTriggered:
+        raise HTTPException(
+            status_code=400, detail="Sorry I cannot answer that question")
     return Response(
         user_id=message.user_id,
         reply=reply_text,
@@ -136,13 +173,18 @@ async def chat(message: Message):
     )
 
 async def stream_response(message: Message):
-    result = Runner.run_streamed(starting_agent=Panacloud_agent, input=message.text)
-    async for event in result.stream_events():
-        if event.type == "raw_response_event" and isinstance(event.data, ResponseTextDeltaEvent):
-            print(event.data.delta, end="", flush=True)
-            # Serialize dictionary to JSON string
-            chunk = json.dumps({"chunk": event.data.delta})
-            yield f"data: {chunk}\n\n"
+    try:
+        result = Runner.run_streamed(starting_agent=Panacloud_agent, input=message.text)
+        async for event in result.stream_events():
+            if event.type == "raw_response_event" and isinstance(event.data, ResponseTextDeltaEvent):
+                print(event.data.delta, end="", flush=True)
+                # Serialize dictionary to JSON string
+                chunk = json.dumps({"chunk": event.data.delta})
+                yield f"data: {chunk}\n\n"
+    except InputGuardrailTripwireTriggered:
+        raise HTTPException(
+            status_code=400, detail="Sorry I cannot answer that question")
+
             
 @app.post("/chat/stream", response_model=Response)
 async def chat_stream(message: Message):
