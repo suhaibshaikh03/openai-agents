@@ -26,8 +26,8 @@ BASE_URL = "https://generativelanguage.googleapis.com/v1beta/openai/"
 MODEL = "gemini-1.5-flash"
 set_tracing_disabled(disabled=True)
 
-# GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-GEMINI_API_KEY = "AIzaSyAz8O5klugfUrXBjaD45xytXHUZVRNkY6Y"
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+
 
 
 
