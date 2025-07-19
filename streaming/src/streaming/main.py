@@ -53,3 +53,41 @@ async def handle_message(message: cl.Message):
     history.append({"role":"assistant","content":result.final_output})
     cl.user_session.set("history", history)
     #await cl.Message(content=result.final_output).send()
+
+
+
+
+
+
+# import asyncio
+
+# from openai.types.responses import ResponseTextDeltaEvent
+
+# from agents import Agent, Runner, function_tool
+
+# @function_tool
+# def get_weather(city:str):
+#   """Gets weather for a city"""
+#   return f"The weather in {city} is sunny"
+
+# async def main():
+#     agent = Agent(
+#         name="Assistant",
+#         instructions="You are a helpful assistant.",
+#         model="gpt-4.1",
+#         tools=[get_weather]
+
+#     )
+
+#     result = Runner.run_streamed(agent, input="What is the weather in New York?")
+#     async for event in result.stream_events():
+#         if event.type == "raw_response_event" and isinstance(event.data, ResponseTextDeltaEvent):
+#             print(event.data.delta, end="", flush=True)
+#         elif event.type == "agent_updated_stream_event":
+#             print(f"Agent updated: {event.new_agent.name}")
+#         elif event.type == "run_item_stream_event":
+#           print(event.name)
+
+
+
+# asyncio.run(main())
